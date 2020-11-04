@@ -69,7 +69,7 @@ Integration tests are done using the [moto](https://github.com/spulec/moto) libr
 
 Before running the tests, you will need a few more libraries installed;
 
-- Install [Python 3.6.8](https://www.python.org/ftp/python/3.6.8/python-3.6.8-macosx10.9.pkg)
+- Install Python 3.6
 - Install pip as follows;
 ```
 curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
