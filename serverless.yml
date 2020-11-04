@@ -10,11 +10,10 @@ provider:
   region: ap-southeast-2
 
 # you can add statements to the Lambda function's IAM Role here
-# we add the roles needed to start and stop instances in case start instance is needed in the future
+# we add the roles needed to stop instances
   iamRoleStatements:
     - Effect: "Allow"
       Action:
-        - "ec2:StartInstances"
         - "ec2:StopInstances"
         - "ec2:DescribeTags"
       Resource: { "Fn::Join" : ["", ["arn:aws:ec2:*:*:instance/*" ] ]  }

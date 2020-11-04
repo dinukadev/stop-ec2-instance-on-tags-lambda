@@ -67,23 +67,16 @@ sls remove
 # Running tests
 Integration tests are done using the [moto](https://github.com/spulec/moto) library which runs a virtual AWS environment so you can test the code similar to an actual AWS environment.
 
-Before running the tests, you will need a few more libraries installed;
+A Dockerfile is provided so that you do not need to install all the required libraries on your local environment to run  tests.
 
-- Install Python 3.6
-- Install pip as follows;
-```
-curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
-python3.6 get-pip.py
-```
-- Install pipenv as follows;
-```
-pip install pipenv
-```
-
-You can now run the tests using the following command;
+Make sure you have docker installed and then run the following command to build the docker image;
 
 ```
-pipenv install
-pipenv run test
+docker build --force-rm=true -t ec2-stop-lambda:latest .
+```
+
+And then to run the tests, run the following command;
+```
+docker run -it ec2-stop-lambda:latest
 ```
 
