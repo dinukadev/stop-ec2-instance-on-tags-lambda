@@ -11,7 +11,6 @@ def ec2_stop(event, context):
                for region in ec2_client.describe_regions()['Regions']]
     tags = os.environ['TAGS']
     tags_filter_arr = list(map(lambda x: create_filter_obj(x), tags.split(",")))
-    print(tags_filter_arr)
     # Iterate over each region
     for region in regions:
         ec2 = boto3.resource('ec2', region_name=region)
