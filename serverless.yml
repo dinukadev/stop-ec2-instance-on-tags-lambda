@@ -11,6 +11,7 @@ provider:
   region: ap-southeast-2
 
 # you can add statements to the Lambda function's IAM Role here
+# we add the roles needed to start and stop instances in case start instance is needed in the future
   iamRoleStatements:
     - Effect: "Allow"
       Action:
@@ -25,7 +26,8 @@ provider:
       Resource: { "Fn::Join" : ["", ["*" ] ]  }
 
 
-# you can define service wide environment variables here
+# you can define a comma separate list of tags here and the lambda will match any EC2 instance that has any one of these tags
+# e.g : Auto=On,Stop=True
   environment:
     TAGS: Auto=On
 
