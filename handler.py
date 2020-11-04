@@ -10,9 +10,7 @@ def ec2_stop(event, context):
     regions = [region['RegionName']
                for region in ec2_client.describe_regions()['Regions']]
     tags = os.environ['TAGS']
-    print(tags)
     tags_filter_arr = list(map(lambda x: create_filter_obj(x), tags.split(",")))
-    print(tags_filter_arr)
 
     # Iterate over each region
     for region in regions:
