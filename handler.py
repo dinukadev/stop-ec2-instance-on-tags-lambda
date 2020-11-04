@@ -19,7 +19,7 @@ def ec2_stop(event, context):
         all_found_instances = []
         for created_tag_filter in tags_filter_arr:
             instances = ec2.instances.filter(
-                Filters=[created_tag_filter])
+                Filters=[created_tag_filter, {'Name': 'instance-state-name', 'Values': ['running']}])
             for instance in instances:
                 all_found_instances.append(instance)
         # Stop the instances
