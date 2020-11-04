@@ -11,16 +11,20 @@ def ec2_stop(event, context):
                for region in ec2_client.describe_regions()['Regions']]
     tags = os.environ['TAGS']
     tags_filter_arr = list(map(lambda x: create_filter_obj(x), tags.split(",")))
-
+    print(tags_filter_arr)
     # Iterate over each region
     for region in regions:
         ec2 = boto3.resource('ec2', region_name=region)
         print("Region:", region)
         # Get only running instances
-        instances = ec2.instances.filter(
-            Filters=tags_filter_arr)
+        all_found_instances = []
+        for created_tag_filter in tags_filter_arr:
+            instances = ec2.instances.filter(
+                Filters=[created_tag_filter])
+            for instance in instances:
+                all_found_instances.append(instance)
         # Stop the instances
-        for instance in instances:
+        for instance in all_found_instances:
             instance.stop()
             print('Stopped instance: ', instance.id)
     print('Successfully executed the ec2 stop lambda functionality')
