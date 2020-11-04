@@ -1,0 +1,63 @@
+
+
+service: ec2-start-stop-lambda # NOTE: update this with your service name
+
+provider:
+  name: aws
+  runtime: python3.6
+
+# you can overwrite defaults here
+  #stage: dev
+  region: ap-southeast-2
+
+# you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "ec2:StartInstances"
+        - "ec2:StopInstances"
+        - "ec2:DescribeTags"
+      Resource: { "Fn::Join" : ["", ["arn:aws:ec2:*:*:instance/*" ] ]  }
+    - Effect: "Allow"
+      Action:
+        - "ec2:DescribeRegions"
+        - "ec2:DescribeInstances"
+      Resource: { "Fn::Join" : ["", ["*" ] ]  }
+
+
+# you can define service wide environment variables here
+  environment:
+    TAGS: Auto=On
+
+# you can add packaging information here
+package:
+  include:
+    - handler.py
+    - serverless.yml
+  exclude:
+    - ./**
+
+
+functions:
+  ec2stop:
+    handler: handler.ec2_stop
+    timeout: 300
+    events:
+      - schedule: ${self:custom.env.cron.${self:custom.stage}}
+
+
+plugins:
+  - serverless-python-requirements
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux
+  stage: ${opt:stage, self:provider.stage}
+  env:
+    cron:
+      # runs every 40 minutes
+      prod: cron(0/40 * * * ? *)
+      # runs every 1 minute(for dev purposes)
+      dev: cron(0/1 * ? * * *)
+      # runs every 1 minute(for dev purposes)
+      test: cron(0/1 * ? * * *)
