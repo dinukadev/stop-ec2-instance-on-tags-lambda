@@ -22,3 +22,4 @@ node_modules/
 .serverless
 .DS_Store
 __pycache__
+Pipfile.lock
