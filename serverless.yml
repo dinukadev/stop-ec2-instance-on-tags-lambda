@@ -14,6 +14,7 @@ provider:
   iamRoleStatements:
     - Effect: "Allow"
       Action:
+        - "ec2:StartInstances"
         - "ec2:StopInstances"
         - "ec2:DescribeTags"
       Resource: { "Fn::Join" : ["", ["arn:aws:ec2:*:*:instance/*" ] ]  }
