@@ -42,7 +42,7 @@ package:
 
 functions:
   ec2stop:
-    handler: handler.ec2_stop
+    handler: handler.ec2_stop_start
     timeout: 300
     events:
       - schedule: ${self:custom.env.cron.${self:custom.stage}}
@@ -58,8 +58,8 @@ custom:
   env:
     cron:
       # runs every 40 minutes
-      prod: cron(0/40 * * * ? *)
+      prod: cron(0/15 * * * ? *)
       # runs every 1 minute(for dev purposes)
-      dev: cron(0/1 * ? * * *)
+      dev: cron(0/15 * * * ? *)
       # runs every 1 minute(for dev purposes)
-      test: cron(0/1 * ? * * *)
+      test: cron(0/15 * ? * * *)

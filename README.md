@@ -72,11 +72,11 @@ A Dockerfile is provided so that you do not need to install all the required lib
 Make sure you have docker installed and then run the following command to build the docker image;
 
 ```
-docker build --force-rm=true -t ec2-stop-lambda:latest .
+docker build --force-rm=true -t ec2-stop-start-lambda:latest .
 ```
 
 And then to run the tests, run the following command;
 ```
-docker run -it ec2-stop-lambda:latest
+docker run -it ec2-stop-start-lambda:latest
 ```
 

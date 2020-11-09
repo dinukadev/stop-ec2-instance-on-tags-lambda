@@ -1,11 +1,11 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta,timezone
 
 import boto3
 import pytz
 
 
-def ec2_stop(event, context):
+def ec2_stop_start(event, context):
     region = 'ap-southeast-2'
     print('Starting the ec2 stop lambda functionality')
     ec2_client = boto3.client('ec2')
@@ -67,6 +67,7 @@ def get_eligible_stop_filters(tags):
     local_tz = pytz.timezone('Australia/Sydney')
     local_time = now.astimezone(local_tz)
     tags_arr = []
+    print(local_time)
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
         if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] is not None and \
@@ -75,13 +76,19 @@ def get_eligible_stop_filters(tags):
                     'stop_to_date']:
             tags_arr.append({'Name': 'tag:{}'.format('Availability'),
                              'Values': [tag]})
+        else:
+            if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] is not None and \
+                    tag_start_end_date[
+                        'stop_from_date'] <= local_time:
+                tags_arr.append({'Name': 'tag:{}'.format('Availability'),
+                                 'Values': [tag]})
     return tags_arr
 
 
 def get_eligible_start_filters(tags):
+    local_tz = pytz.timezone('Australia/Sydney')
     now = datetime.strptime(os.environ['CURR_TIME'],
                             "%m/%d/%Y, %H:%M:%S") if "CURR_TIME" in os.environ is not None else datetime.now()
-    local_tz = pytz.timezone('Australia/Sydney')
     local_time = now.astimezone(local_tz)
     tags_arr = []
 
@@ -146,7 +153,7 @@ def get_valid_tags(pattern):
         start_end_date = local_time + timedelta(hours=18)
     if pattern == "08-18_Mon-Fri":
         if 0 >= day_int <= 4:
-            stop_from_date = local_time +  + timedelta(hours=18)
+            stop_from_date = local_time + + timedelta(hours=18)
             stop_to_date = local_time + timedelta(hours=32)
             start_from_date = local_time + timedelta(hours=8)
             start_end_date = local_time + timedelta(hours=18)
@@ -155,6 +162,11 @@ def get_valid_tags(pattern):
             stop_to_date = local_time + timedelta(days=1)
             start_from_date = None
             start_end_date = None
+    if pattern == "18_Shutdown":
+        stop_from_date = local_time + timedelta(hours=18)
+        stop_to_date = None
+        start_from_date = None
+        start_end_date = None
     return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date,
             'start_end_date': start_end_date}
 
