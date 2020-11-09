@@ -144,7 +144,17 @@ def get_valid_tags(pattern):
         stop_to_date = local_time + timedelta(hours=32)
         start_from_date = local_time + timedelta(hours=8)
         start_end_date = local_time + timedelta(hours=18)
-
+    if pattern == "08-18_Mon-Fri":
+        if 0 >= day_int <= 4:
+            stop_from_date = local_time +  + timedelta(hours=18)
+            stop_to_date = local_time + timedelta(hours=32)
+            start_from_date = local_time + timedelta(hours=8)
+            start_end_date = local_time + timedelta(hours=18)
+        else:
+            stop_from_date = local_time
+            stop_to_date = local_time + timedelta(days=1)
+            start_from_date = None
+            start_end_date = None
     return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date,
             'start_end_date': start_end_date}
 
