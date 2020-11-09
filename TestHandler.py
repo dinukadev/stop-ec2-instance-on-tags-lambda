@@ -284,6 +284,250 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_passed():
     assert instance_id in filtered_instance_ids
 
 
+@mock_ec2
+def should_stop_ec2_instances_for_08_24_Mon_Fri_tag():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 9 2020 12:00AM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_still_before_8am():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 9 2020 7:59AM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+@mock_ec2
+def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_after_8am():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 9 2020 8:01AM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+    client.stop_instances(InstanceIds=[instance_id])
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_saturday():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 14 2020 12:00AM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+
+@mock_ec2
+def should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_sunday():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 15 2020 12:00AM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_saturday():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 14 2020 12:01AM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+    client.stop_instances(InstanceIds=[instance_id])
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+
+@mock_ec2
+def should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_sunday():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 15 2020 12:01AM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+    client.stop_instances(InstanceIds=[instance_id])
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_stop_ec2_instances_for_08_18_Mon_Sun_tag_if_after_6pm():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-18_Mon-Sun'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 9 2020 6:01PM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_start_ec2_instances_for_08_18_Mon_Sun_tag_if_after_8am():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '08-18_Mon-Sun'
+    local_tz = pytz.timezone('Australia/Sydney')
+    datetime_object = datetime.strptime('Nov 9 2020 8:01AM', '%b %d %Y %I:%M%p')
+    datetime_object = datetime_object.astimezone(local_tz)
+    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+    client.stop_instances(InstanceIds=[instance_id])
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+
 
 #
 # @mock_ec2
@@ -381,13 +625,22 @@ def readYaml():
 
 if __name__ == '__main__':
     should_stop_ec2_instances_for_24x5_Mon_Fri_tag()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_passed()
     should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_has_passed()
     should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_sunday()
+    should_start_ec2_instances_for_24x5_Mon_Fri_tag()
+    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_passed()
     should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_monday()
     should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_tuesday()
     should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_wednesday()
     should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_thursday()
     should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_friday()
+    should_stop_ec2_instances_for_08_24_Mon_Fri_tag()
+    should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_still_before_8am()
+    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_after_8am()
+    should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_saturday()
+    should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_sunday()
+    should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_saturday()
+    should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_sunday()
+    should_stop_ec2_instances_for_08_18_Mon_Sun_tag_if_after_6pm()
+    should_start_ec2_instances_for_08_18_Mon_Sun_tag_if_after_8am()
 

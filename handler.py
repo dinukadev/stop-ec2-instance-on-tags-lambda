@@ -69,9 +69,10 @@ def get_eligible_stop_filters(tags):
     tags_arr = []
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
-        print(tag_start_end_date)
-        if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] <= local_time <= tag_start_end_date[
-            'stop_to_date']:
+        if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] is not None and \
+                tag_start_end_date['stop_to_date'] is not None and tag_start_end_date['stop_from_date'] <= local_time <= \
+                tag_start_end_date[
+                    'stop_to_date']:
             tags_arr.append({'Name': 'tag:{}'.format('Availability'),
                              'Values': [tag]})
     return tags_arr
@@ -87,9 +88,22 @@ def get_eligible_start_filters(tags):
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
         print(tag_start_end_date)
-        if tag_start_end_date is not None and local_time > tag_start_end_date['start_from_date']:
+        if tag_start_end_date is not None and tag_start_end_date['start_from_date'] is not None \
+                and tag_start_end_date['start_end_date'] is not None and local_time > \
+                tag_start_end_date['start_from_date'] and \
+                local_time < tag_start_end_date['start_end_date']:
+            print('found1')
             tags_arr.append({'Name': 'tag:{}'.format('Availability'),
                              'Values': [tag]})
+        else:
+            if tag_start_end_date is not None and tag_start_end_date['start_end_date'] is None \
+                    and tag_start_end_date['start_from_date'] is not None \
+                    and local_time > \
+                    tag_start_end_date['start_from_date']:
+                print('found2')
+                tags_arr.append({'Name': 'tag:{}'.format('Availability'),
+                                 'Values': [tag]})
+
     return tags_arr
 
 
@@ -102,11 +116,12 @@ def get_valid_tags(pattern):
     day_int = now.weekday()
     print('day int : {}'.format(day_int))
     if pattern == "24x5_Mon-Fri":
-        if day_int >0:
-            start_from_date = local_time + timedelta(days=day_int-4)
+        if day_int > 0:
+            start_from_date = local_time + timedelta(days=day_int - 4)
+            start_end_date = None
         else:
             start_from_date = local_time + timedelta(days=day_int)
-        print('start from data : {}'.format(start_from_date))
+            start_end_date = None
         if day_int <= 5:
             stop_from_date = local_time + timedelta(days=5 - day_int)
             stop_to_date = local_time + timedelta(days=(5 - day_int) + 2)
@@ -114,11 +129,25 @@ def get_valid_tags(pattern):
             stop_from_date = local_time + timedelta(days=- 1)
             stop_to_date = local_time + timedelta(days=1)
     if pattern == "08-24_Mon-Fri":
-        stop_from_date = now
-        stop_to_date = local_time + timedelta(hours=8)
+        if 0 >= day_int <= 4:
+            stop_from_date = local_time
+            stop_to_date = local_time + timedelta(hours=8)
+            start_from_date = local_time + timedelta(hours=8)
+            start_end_date = local_time + timedelta(hours=24)
+        else:
+            stop_from_date = local_time
+            stop_to_date = local_time + timedelta(days=1)
+            start_from_date = None
+            start_end_date = None
+    if pattern == "08-18_Mon-Sun":
+        stop_from_date = local_time + timedelta(hours=18)
+        stop_to_date = local_time + timedelta(hours=32)
         start_from_date = local_time + timedelta(hours=8)
+        start_end_date = local_time + timedelta(hours=18)
 
-    return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date}
+    return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date,
+            'start_end_date': start_end_date}
+
 
 def create_filter_obj(tag):
     tag_split = tag.split("=")
