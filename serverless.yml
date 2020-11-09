@@ -25,11 +25,8 @@ provider:
       Resource: { "Fn::Join" : ["", ["*" ] ]  }
 
 
-# you can define a comma separate list of tags here and the lambda will match any EC2 instance that has any one of these tags
-# e.g : Auto=On,Stop=True
   environment:
-    TAGS: Auto=On
-    AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri
+    AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri,08-24_Mon-Fri,08-18_Mon-Sun,08-18_Mon-Fri,18_Shutdown
 
 # you can add packaging information here
 package:
@@ -58,8 +55,7 @@ custom:
   env:
     cron:
       # runs every 40 minutes
-      prod: cron(0/15 * * * ? *)
+      prod: rate(15 minutes)
       # runs every 1 minute(for dev purposes)
-      dev: cron(0/15 * * * ? *)
-      # runs every 1 minute(for dev purposes)
-      test: cron(0/15 * ? * * *)
+      dev: rate(1 minutes)
+      test: rate(15 minutes)
