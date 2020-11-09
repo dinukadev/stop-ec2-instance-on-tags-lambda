@@ -14,21 +14,34 @@ def ec2_stop(event, context):
                for region in ec2_client.describe_regions()['Regions']]
     # tags = os.environ['TAGS']
     tags = os.environ['AVAILABILITY_TAG_VALUES']
-    # tags_filter_arr = list(map(lambda x: create_filter_obj(x), tags.split(",")))
-    tags_filter_arr = get_eligible_filters(tags.split(","))
-    print(tags_filter_arr)
+    # stop_tags_filter_arr = list(map(lambda x: create_filter_obj(x), tags.split(",")))
+    stop_tags_filter_arr = get_eligible_stop_filters(tags.split(","))
+    print('stop tags {}',stop_tags_filter_arr)
     ec2 = boto3.resource('ec2', region_name=region)
     # Get only running instances
-    all_found_instances = []
-    for created_tag_filter in tags_filter_arr:
+    all_found_running_instances = []
+    for created_tag_filter in stop_tags_filter_arr:
         instances = ec2.instances.filter(
             Filters=[created_tag_filter, {'Name': 'instance-state-name', 'Values': ['running']}])
         for instance in instances:
-            all_found_instances.append(instance)
+            all_found_running_instances.append(instance)
     # Stop the instances
-    for instance in all_found_instances:
+    for instance in all_found_running_instances:
         instance.stop()
         print('Stopped instance: ', instance.id)
+
+    start_tags_filter_arr = get_eligible_start_filters(tags.split(","))
+    print('start tags {}',start_tags_filter_arr)
+    all_found_stopped_instances = []
+    for created_tag_filter in start_tags_filter_arr:
+        instances = ec2.instances.filter(
+            Filters=[created_tag_filter, {'Name': 'instance-state-name', 'Values': ['stopped']}])
+        for instance in instances:
+            all_found_stopped_instances.append(instance)
+    # Stop the instances
+    for instance in all_found_stopped_instances:
+        instance.start()
+        print('Started instance: ', instance.id)
 
 
 print('Successfully executed the ec2 stop lambda functionality')
@@ -48,7 +61,7 @@ print('Successfully executed the ec2 stop lambda functionality')
 #     print(local_time)
 
 
-def get_eligible_filters(tags):
+def get_eligible_stop_filters(tags):
     now = datetime.strptime(os.environ['CURR_TIME'],
                             "%m/%d/%Y, %H:%M:%S") if "CURR_TIME" in os.environ is not None else datetime.now()
     local_tz = pytz.timezone('Australia/Sydney')
@@ -56,8 +69,25 @@ def get_eligible_filters(tags):
     tags_arr = []
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
-        if tag_start_end_date[0] <= local_time <= tag_start_end_date[1]:
-            print('found')
+        print(tag_start_end_date)
+        if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] <= local_time <= tag_start_end_date[
+            'stop_to_date']:
+            tags_arr.append({'Name': 'tag:{}'.format('Availability'),
+                             'Values': [tag]})
+    return tags_arr
+
+
+def get_eligible_start_filters(tags):
+    now = datetime.strptime(os.environ['CURR_TIME'],
+                            "%m/%d/%Y, %H:%M:%S") if "CURR_TIME" in os.environ is not None else datetime.now()
+    local_tz = pytz.timezone('Australia/Sydney')
+    local_time = now.astimezone(local_tz)
+    tags_arr = []
+
+    for tag in tags:
+        tag_start_end_date = get_valid_tags(tag)
+        print(tag_start_end_date)
+        if tag_start_end_date is not None and local_time > tag_start_end_date['start_from_date']:
             tags_arr.append({'Name': 'tag:{}'.format('Availability'),
                              'Values': [tag]})
     return tags_arr
@@ -70,15 +100,17 @@ def get_valid_tags(pattern):
     local_tz = pytz.timezone('Australia/Sydney')
     local_time = now.astimezone(local_tz)
     day_int = now.weekday()
+    print('day int : {}'.format(day_int))
     if pattern == "24x5_Mon-Fri":
-        print('paattern')
+        start_from_date = local_time + timedelta(days=day_int)
+        print('start from data : {}'.format(start_from_date))
         if day_int <= 5:
-            start_date = local_time + timedelta(days=5 - day_int)
-            end_date = local_time + timedelta(days=(5 - day_int) + 2)
+            stop_from_date = local_time + timedelta(days=5 - day_int)
+            stop_to_date = local_time + timedelta(days=(5 - day_int) + 2)
         else:
-            start_date = local_time + timedelta(days=day_int + 6)
-            end_date = local_time + timedelta(days=day_int + 1)
-        return start_date, end_date
+            stop_from_date = local_time + timedelta(days=day_int + 6)
+            stop_to_date = local_time + timedelta(days=day_int + 1)
+        return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date}
 
 
 def create_filter_obj(tag):
@@ -87,9 +119,3 @@ def create_filter_obj(tag):
     tag_value = tag_split[1]
     return {'Name': 'tag:{}'.format(tag_key),
             'Values': [tag_value]}
-
-
-if __name__ == '__main__':
-    # ec2_stop(None, None)
-    # print(get_valid_tags('24x5_Mon-Fri'))
-    get_eligible_filters(['24x5_Mon-Fri'])

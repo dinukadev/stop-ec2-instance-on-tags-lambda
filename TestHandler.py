@@ -11,8 +11,6 @@ import handler as handler
 
 @mock_ec2
 def should_stop_ec2_instances_for_24x5_Mon_Fri_tag():
-    serverless_yaml = readYaml()
-    # tags_from_serverless_yaml = serverless_yaml['provider']['environment']['AVAILABILITY_TAG_VALUES']
     os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri'
     now = datetime.now()
     now = now.replace(hour=0, second=0, microsecond=0, minute=1)
@@ -24,7 +22,7 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag():
     else:
         local_time = local_time + timedelta(days=day_int + 6)
     os.environ['CURR_TIME'] = local_time.strftime("%m/%d/%Y, %H:%M:%S")
-
+    print(os.environ['CURR_TIME'])
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -39,6 +37,41 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag():
     ec2 = boto3.resource('ec2', region_name=region)
     instances = ec2.instances.filter(
         Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_start_ec2_instances_for_24x5_Mon_Fri_tag():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri'
+    now = datetime.now()
+    now = now.replace(hour=0, second=0, microsecond=0, minute=1)
+    local_tz = pytz.timezone('Australia/Sydney')
+    local_time = now.astimezone(local_tz)
+    day_int = now.weekday()
+    if day_int <= 5:
+        local_time = local_time + timedelta(days=(5 - day_int) + 2)
+    else:
+        local_time = local_time + timedelta(days=day_int + 1)
+    print('local time {}'.format(local_time))
+    os.environ['CURR_TIME'] = local_time.strftime("%m/%d/%Y, %H:%M:%S")
+
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+    client.stop_instances(InstanceIds=[instance_id])
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
     instance_id_list = list(map(lambda x: x.id, instances))
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
@@ -139,7 +172,8 @@ def readYaml():
 
 
 if __name__ == '__main__':
-    should_stop_ec2_instances_for_24x5_Mon_Fri_tag()
+   # should_stop_ec2_instances_for_24x5_Mon_Fri_tag()
+    should_start_ec2_instances_for_24x5_Mon_Fri_tag()
     # test_should_not_stop_ec2_instances_without_matching_tag()
     # test_should_match_multiple_tags()
     # test_stop_multiple_instances_with_different_tags()
