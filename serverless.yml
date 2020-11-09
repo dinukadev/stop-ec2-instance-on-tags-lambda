@@ -29,6 +29,7 @@ provider:
 # e.g : Auto=On,Stop=True
   environment:
     TAGS: Auto=On
+    AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri
 
 # you can add packaging information here
 package:
