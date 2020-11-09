@@ -16,7 +16,7 @@ def ec2_stop(event, context):
     tags = os.environ['AVAILABILITY_TAG_VALUES']
     # stop_tags_filter_arr = list(map(lambda x: create_filter_obj(x), tags.split(",")))
     stop_tags_filter_arr = get_eligible_stop_filters(tags.split(","))
-    print('stop tags {}',stop_tags_filter_arr)
+    print('stop tags {}', stop_tags_filter_arr)
     ec2 = boto3.resource('ec2', region_name=region)
     # Get only running instances
     all_found_running_instances = []
@@ -31,7 +31,7 @@ def ec2_stop(event, context):
         print('Stopped instance: ', instance.id)
 
     start_tags_filter_arr = get_eligible_start_filters(tags.split(","))
-    print('start tags {}',start_tags_filter_arr)
+    print('start tags {}', start_tags_filter_arr)
     all_found_stopped_instances = []
     for created_tag_filter in start_tags_filter_arr:
         instances = ec2.instances.filter(
@@ -108,8 +108,8 @@ def get_valid_tags(pattern):
             stop_from_date = local_time + timedelta(days=5 - day_int)
             stop_to_date = local_time + timedelta(days=(5 - day_int) + 2)
         else:
-            stop_from_date = local_time + timedelta(days=day_int + 6)
-            stop_to_date = local_time + timedelta(days=day_int + 1)
+            stop_from_date = local_time + timedelta(days=- 1)
+            stop_to_date = local_time + timedelta(days=1)
         return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date}
 
 
