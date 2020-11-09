@@ -102,7 +102,10 @@ def get_valid_tags(pattern):
     day_int = now.weekday()
     print('day int : {}'.format(day_int))
     if pattern == "24x5_Mon-Fri":
-        start_from_date = local_time + timedelta(days=day_int)
+        if day_int >0:
+            start_from_date = local_time + timedelta(days=day_int-4)
+        else:
+            start_from_date = local_time + timedelta(days=day_int)
         print('start from data : {}'.format(start_from_date))
         if day_int <= 5:
             stop_from_date = local_time + timedelta(days=5 - day_int)
@@ -110,8 +113,12 @@ def get_valid_tags(pattern):
         else:
             stop_from_date = local_time + timedelta(days=- 1)
             stop_to_date = local_time + timedelta(days=1)
-        return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date}
+    if pattern == "08-24_Mon-Fri":
+        stop_from_date = now
+        stop_to_date = local_time + timedelta(hours=8)
+        start_from_date = local_time + timedelta(hours=8)
 
+    return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date}
 
 def create_filter_obj(tag):
     tag_split = tag.split("=")
