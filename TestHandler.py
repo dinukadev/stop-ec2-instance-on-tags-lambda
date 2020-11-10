@@ -1,12 +1,17 @@
 import os
-from datetime import datetime
 
 import boto3
-import pytz
 import yaml
-from moto import mock_ec2
+from moto import mock_ec2, mock_ses
 
 import handler as handler
+
+os.environ['REGION'] = 'ap-southeast-2'
+os.environ['EMAIL_FROM'] = 'test_from@test.com'
+os.environ['EMAIL_TO'] = 'test_to@test.com'
+os.environ['EMAIL_SUBJECT'] = 'test'
+os.environ['EMAIL_CHARSET'] = 'UTF-8'
+os.environ['EMAIL_ALERTS_FLAG'] = 'true'
 
 
 @mock_ec2
@@ -662,6 +667,152 @@ def should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped():
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
 
+
+@mock_ec2
+@mock_ses
+def should_send_email_for_maintenance_availability_tag_value():
+    os.environ['AVAILABILITY_TAG_VALUES'] = 'Maintenance'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+    conn = boto3.client("ses", region_name="us-west-2")
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_FROM'])
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_TO'])
+
+    handler.ec2_stop_start(None, None)
+
+    send_quota = conn.get_send_quota()
+    sent_count = int(send_quota["SentLast24Hours"])
+    assert sent_count == 1
+
+
+@mock_ec2
+@mock_ses
+def should_send_email_for_invalid_availability_tag_value():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), 'blah'.split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+    conn = boto3.client("ses", region_name="us-west-2")
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_FROM'])
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_TO'])
+
+    handler.ec2_stop_start(None, None)
+
+    send_quota = conn.get_send_quota()
+    sent_count = int(send_quota["SentLast24Hours"])
+    assert sent_count == 1
+
+
+@mock_ec2
+@mock_ses
+def should_send_email_for_invalid_and_maintenance_availability_tag_value():
+    os.environ['AVAILABILITY_TAG_VALUES'] = 'blah'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=2, MaxCount=2)
+    instance_id_one = reservation['Instances'][0]['InstanceId']
+    instance_id_two = reservation['Instances'][1]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), 'blah'.split(",")))
+
+    client.create_tags(Resources=[instance_id_one], Tags=tags)
+
+    tags = list(map(lambda x: create_tag_obj(x), 'Maintenance'.split(",")))
+
+    client.create_tags(Resources=[instance_id_two], Tags=tags)
+
+    conn = boto3.client("ses", region_name="us-west-2")
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_FROM'])
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_TO'])
+
+    handler.ec2_stop_start(None, None)
+
+    send_quota = conn.get_send_quota()
+    sent_count = int(send_quota["SentLast24Hours"])
+    assert sent_count == 1
+
+
+@mock_ec2
+@mock_ses
+def should_send_email_for_maintenance_availability_tag_value():
+    os.environ['AVAILABILITY_TAG_VALUES'] = 'Maintenance'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+    conn = boto3.client("ses", region_name="us-west-2")
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_FROM'])
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_TO'])
+
+    handler.ec2_stop_start(None, None)
+
+    send_quota = conn.get_send_quota()
+    sent_count = int(send_quota["SentLast24Hours"])
+    assert sent_count == 1
+
+
+
+@mock_ec2
+@mock_ses
+def should_send_email_for_maintenance_availability_tag_value_lower_case():
+    os.environ['AVAILABILITY_TAG_VALUES'] = 'maintenance'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+    conn = boto3.client("ses", region_name="us-west-2")
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_FROM'])
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_TO'])
+
+    handler.ec2_stop_start(None, None)
+
+    send_quota = conn.get_send_quota()
+    sent_count = int(send_quota["SentLast24Hours"])
+    assert sent_count == 1
+
+
+@mock_ec2
+@mock_ses
+def should_not_send_email_if_no_invalid_tag_values_found():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+    conn = boto3.client("ses", region_name="us-west-2")
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_FROM'])
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_TO'])
+
+    handler.ec2_stop_start(None, None)
+
+    send_quota = conn.get_send_quota()
+    sent_count = int(send_quota["SentLast24Hours"])
+    assert sent_count == 0
+
+
 def create_tag_obj(tag):
     return {'Key': 'Availability',
             'Value': tag}
@@ -704,3 +855,9 @@ if __name__ == '__main__':
     should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_sunday()
     should_stop_ec2_instances_for_18_Shutdown_tag_if_after_6pm()
     should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped()
+    should_send_email_for_maintenance_availability_tag_value()
+    should_send_email_for_invalid_availability_tag_value()
+    should_send_email_for_invalid_and_maintenance_availability_tag_value()
+    should_send_email_for_maintenance_availability_tag_value_lower_case()
+    should_not_send_email_if_no_invalid_tag_values_found()
+

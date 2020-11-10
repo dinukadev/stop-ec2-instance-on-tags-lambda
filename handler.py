@@ -3,13 +3,15 @@ from datetime import datetime, timedelta
 
 import boto3
 import pytz
+from botocore.exceptions import ClientError
 from dateutil.parser import parse
+
 
 def ec2_stop_start(event, context):
     os.environ['TZ'] = 'UTC'
-    region = 'ap-southeast-2'
+    region = os.environ['REGION']
     print('Starting the ec2 stop lambda functionality')
-    ec2_client = boto3.client('ec2')
+
     tags = os.environ['AVAILABILITY_TAG_VALUES']
     stop_tags_filter_arr = get_eligible_stop_filters(tags.split(","))
     print('stop eligible tags {}', stop_tags_filter_arr)
@@ -39,8 +41,62 @@ def ec2_stop_start(event, context):
         instance.start()
         print('Started instance: ', instance.id)
 
+    handle_email_alerts_for_non_compliant_instances()
+    print('Successfully executed the ec2 stop lambda functionality')
 
-print('Successfully executed the ec2 stop lambda functionality')
+
+def handle_email_alerts_for_non_compliant_instances():
+    email_from = os.environ['EMAIL_FROM']
+    email_to = os.environ['EMAIL_TO']
+    email_subject = os.environ['EMAIL_SUBJECT']
+    email_charset = os.environ['EMAIL_CHARSET']
+
+    email_alert_flag = map(lambda x: True if x == "true" else False, os.environ["EMAIL_ALERTS_FLAG"])
+    ec2_client = boto3.client('ec2', os.environ['REGION'])
+    reservations = ec2_client.describe_instances().get('Reservations', [])
+    email_content_for_invalid_instances = build_email_body_content_for_invalid_tags_or_maintenance_instances(
+        reservations)
+
+    if (email_alert_flag and len(email_content_for_invalid_instances) > 0):
+        ses_client = boto3.client('ses', region_name='us-west-2')
+        try:
+            email_body = " ".join(email_content_for_invalid_instances)
+            print('email body : {}'.format(email_body))
+            response = ses_client.send_email(
+                Destination={'ToAddresses': [email_to, ], },
+                Message={'Body': {
+                    'Text': {
+                        'Charset': email_charset,
+                        'Data': email_body, }, },
+                    'Subject': {
+                        'Charset': email_charset,
+                        'Data': email_subject, }, },
+                Source=email_from)
+            print("Email sent! Message ID: {}".format(response['MessageId']))
+        except ClientError as e:
+            print(e.response['Error']['Message'])
+
+
+def build_email_body_content_for_invalid_tags_or_maintenance_instances(reservations):
+    email_body_text = []
+    for reservation in reservations:
+        for instance in reservation['Instances']:
+            instance_state = instance['State']['Name']
+            tags = {}
+            if 'Tags' in instance:
+                for tag in instance['Tags']:
+                    tags[tag['Key']] = tag['Value']
+                if 'Availability' in tags:
+                    availability_tag = tags['Availability']
+                    availability_tag_lower = availability_tag.lower()
+                    if 'maint' in availability_tag_lower:
+                        email_body_text.append(
+                            'WARNING: Instance {} is tagged for Maintenance! \n'.format(str(instance['InstanceId'])))
+                    else:
+                        if availability_tag not in os.environ['AVAILABILITY_TAG_VALUES']:
+                            email_body_text.append(
+                                'ERROR: Instance {} has a non-compliant value! \n'.format(str(instance['InstanceId'])))
+    return email_body_text
 
 
 def get_eligible_stop_filters(tags):
@@ -51,24 +107,24 @@ def get_eligible_stop_filters(tags):
     tags_arr = []
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
-        print('tag : {}',tag)
+        print('tag : {}', tag)
         print('start and end date params : {}'.format(tag_start_end_date))
         if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] is not None and \
                 tag_start_end_date['stop_to_date'] is not None and tag_start_end_date['stop_from_date'] <= local_time <= \
                 tag_start_end_date[
                     'stop_to_date']:
             # TODO: remove _test
-            tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
+            tags_arr.append({'Name': 'tag:{}'.format('Availability'),
                              'Values': [tag]})
         else:
             print(tag_start_end_date)
             print(local_time)
             if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] is not None and \
-                 tag_start_end_date['stop_to_date'] is None and \
+                    tag_start_end_date['stop_to_date'] is None and \
                     tag_start_end_date[
                         'stop_from_date'] <= local_time:
                 # TODO: remove _test
-                tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
+                tags_arr.append({'Name': 'tag:{}'.format('Availability'),
                                  'Values': [tag]})
     return tags_arr
 
@@ -81,14 +137,14 @@ def get_eligible_start_filters(tags):
     print('local time : {}'.format(local_time))
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
-        print('tag : {}',tag)
+        print('tag : {}', tag)
         print('start and end date params : {}'.format(tag_start_end_date))
         if tag_start_end_date is not None and tag_start_end_date['start_from_date'] is not None \
                 and tag_start_end_date['start_end_date'] is not None and local_time > \
                 tag_start_end_date['start_from_date'] and \
                 local_time < tag_start_end_date['start_end_date']:
             # TODO: remove _test
-            tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
+            tags_arr.append({'Name': 'tag:{}'.format('Availability'),
                              'Values': [tag]})
         else:
             if tag_start_end_date is not None and tag_start_end_date['start_end_date'] is None \
@@ -96,7 +152,7 @@ def get_eligible_start_filters(tags):
                     and local_time > \
                     tag_start_end_date['start_from_date']:
                 # TODO: remove _test
-                tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
+                tags_arr.append({'Name': 'tag:{}'.format('Availability'),
                                  'Values': [tag]})
 
     return tags_arr
@@ -108,6 +164,10 @@ def get_valid_tags(pattern):
     local_time = now.astimezone(local_tz)
     local_time = local_time.replace(hour=0, second=0, microsecond=0, minute=0)
     day_int = now.weekday()
+    stop_from_date = None
+    stop_to_date = None
+    start_from_date = None
+    start_end_date = None
     if pattern == "24x5_Mon-Fri":
         if day_int > 0:
             start_from_date = local_time + timedelta(days=day_int - 4)
