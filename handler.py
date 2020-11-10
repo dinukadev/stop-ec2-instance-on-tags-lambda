@@ -81,13 +81,13 @@ def build_email_body_content_for_invalid_tags_or_maintenance_instances(reservati
     email_body_text = []
     for reservation in reservations:
         for instance in reservation['Instances']:
-            instance_state = instance['State']['Name']
             tags = {}
             if 'Tags' in instance:
                 for tag in instance['Tags']:
                     tags[tag['Key']] = tag['Value']
-                if 'Availability' in tags:
-                    availability_tag = tags['Availability']
+                if 'Availability_test' in tags:
+                    # TODO: revert back _test
+                    availability_tag = tags['Availability_test']
                     availability_tag_lower = availability_tag.lower()
                     if 'maint' in availability_tag_lower:
                         email_body_text.append(
@@ -114,7 +114,7 @@ def get_eligible_stop_filters(tags):
                 tag_start_end_date[
                     'stop_to_date']:
             # TODO: remove _test
-            tags_arr.append({'Name': 'tag:{}'.format('Availability'),
+            tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                              'Values': [tag]})
         else:
             print(tag_start_end_date)
@@ -124,7 +124,7 @@ def get_eligible_stop_filters(tags):
                     tag_start_end_date[
                         'stop_from_date'] <= local_time:
                 # TODO: remove _test
-                tags_arr.append({'Name': 'tag:{}'.format('Availability'),
+                tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                                  'Values': [tag]})
     return tags_arr
 
@@ -144,7 +144,7 @@ def get_eligible_start_filters(tags):
                 tag_start_end_date['start_from_date'] and \
                 local_time < tag_start_end_date['start_end_date']:
             # TODO: remove _test
-            tags_arr.append({'Name': 'tag:{}'.format('Availability'),
+            tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                              'Values': [tag]})
         else:
             if tag_start_end_date is not None and tag_start_end_date['start_end_date'] is None \
@@ -152,7 +152,7 @@ def get_eligible_start_filters(tags):
                     and local_time > \
                     tag_start_end_date['start_from_date']:
                 # TODO: remove _test
-                tags_arr.append({'Name': 'tag:{}'.format('Availability'),
+                tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                                  'Values': [tag]})
 
     return tags_arr

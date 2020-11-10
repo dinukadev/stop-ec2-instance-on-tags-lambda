@@ -672,6 +672,7 @@ def should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped():
 @mock_ses
 def should_send_email_for_maintenance_availability_tag_value():
     os.environ['AVAILABILITY_TAG_VALUES'] = 'Maintenance'
+    os.environ['EMAIL_ALERTS_FLAG'] = 'true'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -695,6 +696,7 @@ def should_send_email_for_maintenance_availability_tag_value():
 @mock_ses
 def should_send_email_for_invalid_availability_tag_value():
     os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri'
+    os.environ['EMAIL_ALERTS_FLAG'] = 'true'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -718,6 +720,7 @@ def should_send_email_for_invalid_availability_tag_value():
 @mock_ses
 def should_send_email_for_invalid_and_maintenance_availability_tag_value():
     os.environ['AVAILABILITY_TAG_VALUES'] = 'blah'
+    os.environ['EMAIL_ALERTS_FLAG'] = 'true'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=2, MaxCount=2)
@@ -747,6 +750,7 @@ def should_send_email_for_invalid_and_maintenance_availability_tag_value():
 @mock_ses
 def should_send_email_for_maintenance_availability_tag_value():
     os.environ['AVAILABILITY_TAG_VALUES'] = 'Maintenance'
+    os.environ['EMAIL_ALERTS_FLAG'] = 'true'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -771,6 +775,7 @@ def should_send_email_for_maintenance_availability_tag_value():
 @mock_ses
 def should_send_email_for_maintenance_availability_tag_value_lower_case():
     os.environ['AVAILABILITY_TAG_VALUES'] = 'maintenance'
+    os.environ['EMAIL_ALERTS_FLAG'] = 'true'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -794,12 +799,36 @@ def should_send_email_for_maintenance_availability_tag_value_lower_case():
 @mock_ses
 def should_not_send_email_if_no_invalid_tag_values_found():
     os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri'
+    os.environ['EMAIL_ALERTS_FLAG'] = 'true'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
     instance_id = reservation['Instances'][0]['InstanceId']
 
     tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+    conn = boto3.client("ses", region_name="us-west-2")
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_FROM'])
+    conn.verify_email_address(EmailAddress=os.environ['EMAIL_TO'])
+
+    handler.ec2_stop_start(None, None)
+
+    send_quota = conn.get_send_quota()
+    sent_count = int(send_quota["SentLast24Hours"])
+    assert sent_count == 0
+
+@mock_ec2
+@mock_ses
+def should_not_send_email_if_alert_flag_false():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri'
+    os.environ['EMAIL_ALERTS_FLAG'] = 'false'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), 'blah'.split(",")))
 
     client.create_tags(Resources=[instance_id], Tags=tags)
     conn = boto3.client("ses", region_name="us-west-2")
@@ -828,36 +857,37 @@ def readYaml():
 
 
 if __name__ == '__main__':
-    should_stop_ec2_instances_for_24x5_Mon_Fri_tag()
-    should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_has_passed()
-    should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_sunday()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_passed()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_monday()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_tuesday()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_wednesday()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_thursday()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_friday()
-    should_stop_ec2_instances_for_08_24_Mon_Fri_tag()
-    should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_still_before_8am()
-    should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_after_8am()
-    should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_saturday()
-    should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_sunday()
-    should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_saturday()
-    should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_sunday()
-    should_stop_ec2_instances_for_08_18_Mon_Sun_tag_if_after_6pm()
-    should_start_ec2_instances_for_08_18_Mon_Sun_tag_if_after_8am()
-    should_stop_ec2_instances_for_08_18_Mon_Fri_tag_if_after_6pm()
-    should_stop_ec2_instances_for_08_18_Mon_Fri_tag_if_after_12am()
-    should_start_ec2_instances_for_08_18_Mon_Fri_tag_if_after_8am()
-    should_start_ec2_instances_for_08_18_Mon_Fri_tag_if_after_9am()
-    should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_saturday()
-    should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_sunday()
-    should_stop_ec2_instances_for_18_Shutdown_tag_if_after_6pm()
-    should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped()
-    should_send_email_for_maintenance_availability_tag_value()
-    should_send_email_for_invalid_availability_tag_value()
-    should_send_email_for_invalid_and_maintenance_availability_tag_value()
-    should_send_email_for_maintenance_availability_tag_value_lower_case()
-    should_not_send_email_if_no_invalid_tag_values_found()
+    # should_stop_ec2_instances_for_24x5_Mon_Fri_tag()
+    # should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_has_passed()
+    # should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_sunday()
+    # should_start_ec2_instances_for_24x5_Mon_Fri_tag()
+    # should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_passed()
+    # should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_monday()
+    # should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_tuesday()
+    # should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_wednesday()
+    # should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_thursday()
+    # should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_friday()
+    # should_stop_ec2_instances_for_08_24_Mon_Fri_tag()
+    # should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_still_before_8am()
+    # should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_after_8am()
+    # should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_saturday()
+    # should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_sunday()
+    # should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_saturday()
+    # should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_sunday()
+    # should_stop_ec2_instances_for_08_18_Mon_Sun_tag_if_after_6pm()
+    # should_start_ec2_instances_for_08_18_Mon_Sun_tag_if_after_8am()
+    # should_stop_ec2_instances_for_08_18_Mon_Fri_tag_if_after_6pm()
+    # should_stop_ec2_instances_for_08_18_Mon_Fri_tag_if_after_12am()
+    # should_start_ec2_instances_for_08_18_Mon_Fri_tag_if_after_8am()
+    # should_start_ec2_instances_for_08_18_Mon_Fri_tag_if_after_9am()
+    # should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_saturday()
+    # should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_sunday()
+    # should_stop_ec2_instances_for_18_Shutdown_tag_if_after_6pm()
+    # should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped()
+    # should_send_email_for_maintenance_availability_tag_value()
+    # should_send_email_for_invalid_availability_tag_value()
+    # should_send_email_for_invalid_and_maintenance_availability_tag_value()
+    # should_send_email_for_maintenance_availability_tag_value_lower_case()
+    # should_not_send_email_if_no_invalid_tag_values_found()
+    should_not_send_email_if_alert_flag_false()
 

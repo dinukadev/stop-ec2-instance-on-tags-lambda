@@ -23,10 +23,14 @@ provider:
         - "ec2:DescribeRegions"
         - "ec2:DescribeInstances"
       Resource: { "Fn::Join" : ["", ["*" ] ]  }
+    - Effect: "Allow"
+      Action:
+        - "ses:SendEmail"
+      Resource: { "Fn::Join": ["", ["*" ] ]  }
 
 
   environment:
-    AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri,08-24_Mon-Fri,08-18_Mon-Sun,08-18_Mon-Fri,18_Shutdown
+    AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri,08-24_Mon-Fri,08-18_Mon-Sun,08-18_Mon-Fri,18_Shutdown,24x7_Mon-Sun,Maintenance
     #true if alerts are to be sent, false otherwise
     EMAIL_ALERTS_FLAG: true
     REGION: ${self:provider.region}
@@ -69,10 +73,10 @@ custom:
         EMAIL_TO: dl-aws-ops-master@metricon.com.au
       dev:
         EMAIL_FROM: dl-aws-ops-master@metricon.com.au
-        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_TO: dinuka@dinuka.tech
     cron:
       # runs every 40 minutes
       prod: rate(15 minutes)
       # runs every 1 minute(for dev purposes)
-      dev: rate(15 minute)
+      dev: rate(1 minute)
       test: rate(15 minutes)
