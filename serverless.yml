@@ -38,8 +38,7 @@ provider:
     EMAIL_TO: ${self:custom.env.email.${self:custom.stage}.EMAIL_TO}
     EMAIL_SUBJECT: AWS Availability Scheduler Report - Development Environment
     EMAIL_CHARSET: UTF-8
-    #TODO: remove _test
-    TAG_NAME: Availability_test
+    TAG_NAME: Availability
 
 # you can add packaging information here
 package:
