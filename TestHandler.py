@@ -132,6 +132,29 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_has_passed():
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
 
+@mock_ec2
+def should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_saturday():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri'
+    os.environ['CURR_TIME'] = '2020-11-14T00:00:00+11:00'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop_start(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
 
 @mock_ec2
 def should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_sunday():
@@ -965,3 +988,4 @@ if __name__ == '__main__':
     should_not_stop_ec2_instances_for_24x7_Mon_Sun_tag()
     should_start_ec2_instances_for_24x7_Mon_Sun_tag_if_stopped()
     should_stop_availability_tag_with_invalid_value()
+    should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_saturday()
