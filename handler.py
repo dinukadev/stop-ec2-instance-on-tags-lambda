@@ -54,7 +54,7 @@ def handle_email_alerts_for_non_compliant_instances():
     email_alert_flag = True if "true" in os.environ["EMAIL_ALERTS_FLAG"] else False
     ec2_client = boto3.client('ec2', os.environ['REGION'])
     reservations = ec2_client.describe_instances().get('Reservations', [])
-    email_content_for_invalid_instances = build_email_body_content_for_invalid_tags_or_maintenance_instances(
+    email_content_for_invalid_instances = build_email_body_content_for_invalid_tags_or_maintenance_instances_and_stop_invalid_value_intances(
         reservations)
 
     if email_alert_flag and len(email_content_for_invalid_instances) > 0:
@@ -77,10 +77,12 @@ def handle_email_alerts_for_non_compliant_instances():
             print(e.response['Error']['Message'])
 
 
-def build_email_body_content_for_invalid_tags_or_maintenance_instances(reservations):
+def build_email_body_content_for_invalid_tags_or_maintenance_instances_and_stop_invalid_value_intances(reservations):
     email_body_text = []
+    ec2_client = boto3.client('ec2', os.environ['REGION'])
     for reservation in reservations:
         for instance in reservation['Instances']:
+            instance_state = instance['State']['Name']
             tags = {}
             if 'Tags' in instance:
                 for tag in instance['Tags']:
@@ -97,6 +99,9 @@ def build_email_body_content_for_invalid_tags_or_maintenance_instances(reservati
                         if availability_tag not in os.environ['AVAILABILITY_TAG_VALUES']:
                             email_body_text.append(
                                 'ERROR: Instance {} has a non-compliant value! \n'.format(str(instance['InstanceId'])))
+                            if instance_state == "running":
+                                ec2_client.stop_instances(InstanceIds=[str(instance['InstanceId'])])
+                                print('Stopped instance id : {} as it has an invalid value : {}'.format(str(instance['InstanceId']), availability_tag))
     return email_body_text
 
 
@@ -218,11 +223,6 @@ def get_valid_tags(pattern):
         stop_from_date = None
         stop_to_date = None
         start_from_date = local_time
-        start_end_date = None
-    if pattern not in os.environ['AVAILABILITY_TAG_VALUES'].split(","):
-        stop_from_date = local_time
-        stop_to_date = None
-        start_from_date = None
         start_end_date = None
 
     return {'stop_from_date': stop_from_date, 'stop_to_date': stop_to_date, 'start_from_date': start_from_date,

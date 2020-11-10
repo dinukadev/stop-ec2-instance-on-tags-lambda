@@ -11,7 +11,7 @@ os.environ['EMAIL_FROM'] = 'test_from@test.com'
 os.environ['EMAIL_TO'] = 'test_to@test.com'
 os.environ['EMAIL_SUBJECT'] = 'test'
 os.environ['EMAIL_CHARSET'] = 'UTF-8'
-os.environ['EMAIL_ALERTS_FLAG'] = 'true'
+os.environ['EMAIL_ALERTS_FLAG'] = 'false'
 
 
 @mock_ec2
@@ -25,6 +25,78 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag():
     instance_id = reservation['Instances'][0]['InstanceId']
 
     tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop_start(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_not_stop_ec2_instances_for_24x7_Mon_Sun_tag():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x7_Mon-Sun'
+    os.environ['CURR_TIME'] = '2020-11-14T00:00:00+11:00'
+    # os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop_start(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['stopped']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id not in filtered_instance_ids
+
+
+@mock_ec2
+def should_start_ec2_instances_for_24x7_Mon_Sun_tag_if_stopped():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x7_Mon-Sun'
+    os.environ['CURR_TIME'] = '2020-11-14T00:01:00+11:00'
+    # os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+
+    client.create_tags(Resources=[instance_id], Tags=tags)
+    client.stop_instances(InstanceIds=[instance_id])
+
+    handler.ec2_stop_start(None, None)
+
+    ec2 = boto3.resource('ec2', region_name=region)
+    instances = ec2.instances.filter(
+        Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    instance_id_list = list(map(lambda x: x.id, instances))
+    filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
+    assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_stop_availability_tag_with_invalid_value():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x7_Mon-Sun'
+    os.environ['CURR_TIME'] = '2020-11-14T00:01:00+11:00'
+    region = 'ap-southeast-2'
+    client = boto3.client('ec2', region_name=region)
+    reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    instance_id = reservation['Instances'][0]['InstanceId']
+
+    tags = list(map(lambda x: create_tag_obj(x), 'blah'.split(",")))
 
     client.create_tags(Resources=[instance_id], Tags=tags)
 
@@ -770,7 +842,6 @@ def should_send_email_for_maintenance_availability_tag_value():
     assert sent_count == 1
 
 
-
 @mock_ec2
 @mock_ses
 def should_send_email_for_maintenance_availability_tag_value_lower_case():
@@ -817,6 +888,7 @@ def should_not_send_email_if_no_invalid_tag_values_found():
     send_quota = conn.get_send_quota()
     sent_count = int(send_quota["SentLast24Hours"])
     assert sent_count == 0
+
 
 @mock_ec2
 @mock_ses
@@ -890,4 +962,6 @@ if __name__ == '__main__':
     should_send_email_for_maintenance_availability_tag_value_lower_case()
     should_not_send_email_if_no_invalid_tag_values_found()
     should_not_send_email_if_alert_flag_false()
-
+    should_not_stop_ec2_instances_for_24x7_Mon_Sun_tag()
+    should_start_ec2_instances_for_24x7_Mon_Sun_tag_if_stopped()
+    should_stop_availability_tag_with_invalid_value()
