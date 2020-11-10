@@ -87,9 +87,7 @@ def build_email_body_content_for_invalid_tags_or_maintenance_instances_and_stop_
             if 'Tags' in instance:
                 for tag in instance['Tags']:
                     tags[tag['Key']] = tag['Value']
-                # TODO: revert back _test
                 if os.environ['TAG_NAME'] in tags:
-                    # TODO: revert back _test
                     availability_tag = tags[os.environ['TAG_NAME']]
                     availability_tag_lower = availability_tag.lower()
                     if 'maint' in availability_tag_lower:
@@ -119,7 +117,6 @@ def get_eligible_stop_filters(tags):
                 tag_start_end_date['stop_to_date'] is not None and tag_start_end_date['stop_from_date'] <= local_time <= \
                 tag_start_end_date[
                     'stop_to_date']:
-            # TODO: remove _test
             tags_arr.append({'Name': 'tag:{}'.format(os.environ['TAG_NAME']),
                              'Values': [tag]})
         else:
@@ -129,7 +126,6 @@ def get_eligible_stop_filters(tags):
                     tag_start_end_date['stop_to_date'] is None and \
                     tag_start_end_date[
                         'stop_from_date'] <= local_time:
-                # TODO: remove _test
                 tags_arr.append({'Name': 'tag:{}'.format(os.environ['TAG_NAME']),
                                  'Values': [tag]})
     return tags_arr
@@ -149,7 +145,6 @@ def get_eligible_start_filters(tags):
                 and tag_start_end_date['start_end_date'] is not None and local_time > \
                 tag_start_end_date['start_from_date'] and \
                 local_time < tag_start_end_date['start_end_date']:
-            # TODO: remove _test
             tags_arr.append({'Name': 'tag:{}'.format(os.environ['TAG_NAME']),
                              'Values': [tag]})
         else:
@@ -157,7 +152,6 @@ def get_eligible_start_filters(tags):
                     and tag_start_end_date['start_from_date'] is not None \
                     and local_time > \
                     tag_start_end_date['start_from_date']:
-                # TODO: remove _test
                 tags_arr.append({'Name': 'tag:{}'.format(os.environ['TAG_NAME']),
                                  'Values': [tag]})
 
