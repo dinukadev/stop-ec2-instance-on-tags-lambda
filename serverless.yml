@@ -75,7 +75,7 @@ custom:
         EMAIL_TO: dl-aws-ops-master@metricon.com.au
       dev:
         EMAIL_FROM: dl-aws-ops-master@metricon.com.au
-        EMAIL_TO: dinuka@dinuka.tech
+        EMAIL_TO: dl-aws-ops-master@metricon.com.au
     cron:
       # runs every 40 minutes
       prod: rate(15 minutes)
