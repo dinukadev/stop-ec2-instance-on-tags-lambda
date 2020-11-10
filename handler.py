@@ -12,7 +12,7 @@ def ec2_stop_start(event, context):
     ec2_client = boto3.client('ec2')
     tags = os.environ['AVAILABILITY_TAG_VALUES']
     stop_tags_filter_arr = get_eligible_stop_filters(tags.split(","))
-    print('stop tags {}', stop_tags_filter_arr)
+    print('stop eligible tags {}', stop_tags_filter_arr)
     ec2 = boto3.resource('ec2', region_name=region)
     # Get only running instances
     all_found_running_instances = []
@@ -27,7 +27,7 @@ def ec2_stop_start(event, context):
         print('Stopped instance: ', instance.id)
 
     start_tags_filter_arr = get_eligible_start_filters(tags.split(","))
-    print('start tags {}', start_tags_filter_arr)
+    print('start eligible tags {}', start_tags_filter_arr)
     all_found_stopped_instances = []
     for created_tag_filter in start_tags_filter_arr:
         instances = ec2.instances.filter(
@@ -51,8 +51,8 @@ def get_eligible_stop_filters(tags):
     tags_arr = []
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
-        print(tag_start_end_date)
-        print(local_time)
+        print('tag : {}',tag)
+        print('start and end date params : {}'.format(tag_start_end_date))
         if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] is not None and \
                 tag_start_end_date['stop_to_date'] is not None and tag_start_end_date['stop_from_date'] <= local_time <= \
                 tag_start_end_date[
@@ -60,7 +60,6 @@ def get_eligible_stop_filters(tags):
             # TODO: remove _test
             tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                              'Values': [tag]})
-            print('matched tag1 : {}',tag)
         else:
             print(tag_start_end_date)
             print(local_time)
@@ -71,7 +70,6 @@ def get_eligible_stop_filters(tags):
                 # TODO: remove _test
                 tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                                  'Values': [tag]})
-                print('matched tag2 : {}',tag)
     return tags_arr
 
 
@@ -80,16 +78,16 @@ def get_eligible_start_filters(tags):
     now = parse(os.environ['CURR_TIME']) if "CURR_TIME" in os.environ is not None else datetime.now()
     local_time = now.astimezone(local_tz)
     tags_arr = []
-
+    print('local time : {}'.format(local_time))
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
-        print('tags : {}'.format(tag))
+        print('tag : {}',tag)
+        print('start and end date params : {}'.format(tag_start_end_date))
         if tag_start_end_date is not None and tag_start_end_date['start_from_date'] is not None \
                 and tag_start_end_date['start_end_date'] is not None and local_time > \
                 tag_start_end_date['start_from_date'] and \
                 local_time < tag_start_end_date['start_end_date']:
             # TODO: remove _test
-            print('matched tag3 : {}',tag)
             tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                              'Values': [tag]})
         else:
@@ -98,7 +96,6 @@ def get_eligible_start_filters(tags):
                     and local_time > \
                     tag_start_end_date['start_from_date']:
                 # TODO: remove _test
-                print('matched tag4 : {}',tag)
                 tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                                  'Values': [tag]})
 
@@ -107,7 +104,6 @@ def get_eligible_start_filters(tags):
 
 def get_valid_tags(pattern):
     now = parse(os.environ['CURR_TIME']) if "CURR_TIME" in os.environ is not None else datetime.now()
-    #now = now.replace(hour=0, second=0, microsecond=0, minute=0)
     local_tz = pytz.timezone('Australia/Sydney')
     local_time = now.astimezone(local_tz)
     local_time = local_time.replace(hour=0, second=0, microsecond=0, minute=0)
