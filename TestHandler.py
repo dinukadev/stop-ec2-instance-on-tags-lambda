@@ -912,4 +912,3 @@ if __name__ == '__main__':
     should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_sunday()
     should_stop_ec2_instances_for_18_Shutdown_tag_if_after_6pm()
     should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped()
-    #should_test_with_all_tags()
