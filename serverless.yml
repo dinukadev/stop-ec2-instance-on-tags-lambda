@@ -32,11 +32,11 @@ provider:
   environment:
     AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri,08-24_Mon-Fri,08-18_Mon-Sun,08-18_Mon-Fri,18_Shutdown,24x7_Mon-Sun,Maintenance
     #true if alerts are to be sent, false otherwise
-    EMAIL_ALERTS_FLAG: true
+    EMAIL_ALERTS_FLAG:  ${self:custom.env.email.${self:custom.stage}.EMAIL_ALERTS_FLAG}
     REGION: ${self:provider.region}
     EMAIL_FROM: ${self:custom.env.email.${self:custom.stage}.EMAIL_FROM}
     EMAIL_TO: ${self:custom.env.email.${self:custom.stage}.EMAIL_TO}
-    EMAIL_SUBJECT: AWS Availability Scheduler Report - Development Environment
+    EMAIL_SUBJECT: ${self:custom.env.email.${self:custom.stage}.EMAIL_SUBJECT}
     EMAIL_CHARSET: UTF-8
     TAG_NAME: Availability
 
@@ -69,12 +69,18 @@ custom:
       prod:
         EMAIL_FROM: dl-aws-ops-master@metricon.com.au
         EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_SUBJECT: AWS Availability Scheduler Report - Production Environment
+        EMAIL_ALERTS_FLAG: false
       test:
         EMAIL_FROM: dl-aws-ops-master@metricon.com.au
         EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_SUBJECT: AWS Availability Scheduler Report - Test Environment
+        EMAIL_ALERTS_FLAG: false
       dev:
         EMAIL_FROM: dl-aws-ops-master@metricon.com.au
         EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_SUBJECT: AWS Availability Scheduler Report - Development Environment
+        EMAIL_ALERTS_FLAG: true
     cron:
       prod: rate(15 minutes)
       dev: rate(15 minutes)
