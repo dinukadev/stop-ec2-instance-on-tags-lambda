@@ -3,9 +3,10 @@ from datetime import datetime, timedelta
 
 import boto3
 import pytz
-
+from dateutil.parser import parse
 
 def ec2_stop_start(event, context):
+    os.environ['TZ'] = 'UTC'
     region = 'ap-southeast-2'
     print('Starting the ec2 stop lambda functionality')
     ec2_client = boto3.client('ec2')
@@ -43,13 +44,15 @@ print('Successfully executed the ec2 stop lambda functionality')
 
 
 def get_eligible_stop_filters(tags):
-    now = datetime.strptime(os.environ['CURR_TIME'],
-                            "%m/%d/%Y, %H:%M:%S") if "CURR_TIME" in os.environ is not None else datetime.now()
+    now = parse(os.environ['CURR_TIME']) if "CURR_TIME" in os.environ is not None else datetime.now()
     local_tz = pytz.timezone('Australia/Sydney')
     local_time = now.astimezone(local_tz)
+    print('local time : {}'.format(local_time))
     tags_arr = []
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
+        print(tag_start_end_date)
+        print(local_time)
         if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] is not None and \
                 tag_start_end_date['stop_to_date'] is not None and tag_start_end_date['stop_from_date'] <= local_time <= \
                 tag_start_end_date[
@@ -57,30 +60,36 @@ def get_eligible_stop_filters(tags):
             # TODO: remove _test
             tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                              'Values': [tag]})
+            print('matched tag1 : {}',tag)
         else:
+            print(tag_start_end_date)
+            print(local_time)
             if tag_start_end_date is not None and tag_start_end_date['stop_from_date'] is not None and \
+                 tag_start_end_date['stop_to_date'] is None and \
                     tag_start_end_date[
                         'stop_from_date'] <= local_time:
                 # TODO: remove _test
                 tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                                  'Values': [tag]})
+                print('matched tag2 : {}',tag)
     return tags_arr
 
 
 def get_eligible_start_filters(tags):
     local_tz = pytz.timezone('Australia/Sydney')
-    now = datetime.strptime(os.environ['CURR_TIME'],
-                            "%m/%d/%Y, %H:%M:%S") if "CURR_TIME" in os.environ is not None else datetime.now()
+    now = parse(os.environ['CURR_TIME']) if "CURR_TIME" in os.environ is not None else datetime.now()
     local_time = now.astimezone(local_tz)
     tags_arr = []
 
     for tag in tags:
         tag_start_end_date = get_valid_tags(tag)
+        print('tags : {}'.format(tag))
         if tag_start_end_date is not None and tag_start_end_date['start_from_date'] is not None \
                 and tag_start_end_date['start_end_date'] is not None and local_time > \
                 tag_start_end_date['start_from_date'] and \
                 local_time < tag_start_end_date['start_end_date']:
             # TODO: remove _test
+            print('matched tag3 : {}',tag)
             tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                              'Values': [tag]})
         else:
@@ -89,6 +98,7 @@ def get_eligible_start_filters(tags):
                     and local_time > \
                     tag_start_end_date['start_from_date']:
                 # TODO: remove _test
+                print('matched tag4 : {}',tag)
                 tags_arr.append({'Name': 'tag:{}'.format('Availability_test'),
                                  'Values': [tag]})
 
@@ -96,11 +106,11 @@ def get_eligible_start_filters(tags):
 
 
 def get_valid_tags(pattern):
-    now = datetime.strptime(os.environ['CURR_TIME'],
-                            "%m/%d/%Y, %H:%M:%S") if "CURR_TIME" in os.environ is not None else datetime.now()
-    now = now.replace(hour=0, second=0, microsecond=0, minute=0)
+    now = parse(os.environ['CURR_TIME']) if "CURR_TIME" in os.environ is not None else datetime.now()
+    #now = now.replace(hour=0, second=0, microsecond=0, minute=0)
     local_tz = pytz.timezone('Australia/Sydney')
     local_time = now.astimezone(local_tz)
+    local_time = local_time.replace(hour=0, second=0, microsecond=0, minute=0)
     day_int = now.weekday()
     if pattern == "24x5_Mon-Fri":
         if day_int > 0:
@@ -116,7 +126,7 @@ def get_valid_tags(pattern):
             stop_from_date = local_time + timedelta(days=- 1)
             stop_to_date = local_time + timedelta(days=1)
     if pattern == "08-24_Mon-Fri":
-        if 0 >= day_int <= 4:
+        if 0 <= day_int <= 4:
             stop_from_date = local_time
             stop_to_date = local_time + timedelta(hours=8)
             start_from_date = local_time + timedelta(hours=8)
@@ -132,7 +142,7 @@ def get_valid_tags(pattern):
         start_from_date = local_time + timedelta(hours=8)
         start_end_date = local_time + timedelta(hours=18)
     if pattern == "08-18_Mon-Fri":
-        if 0 >= day_int <= 4:
+        if 0 <= day_int <= 4:
             stop_from_date = local_time + + timedelta(hours=18)
             stop_to_date = local_time + timedelta(hours=32)
             start_from_date = local_time + timedelta(hours=8)

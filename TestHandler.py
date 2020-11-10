@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime
 
 import boto3
 import pytz
@@ -15,7 +15,8 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 14 2020 12:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-14T00:00:00+11:00'
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -41,7 +42,8 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_has_passed():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 14 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-14T01:00:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -59,6 +61,7 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_has_passed():
     instance_id_list = list(map(lambda x: x.id, instances))
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
+
 
 @mock_ec2
 def should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_sunday():
@@ -66,7 +69,8 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_sunday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 15 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-15T01:00:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -84,8 +88,6 @@ def should_stop_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_sunday():
     instance_id_list = list(map(lambda x: x.id, instances))
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
-
-
 
 
 @mock_ec2
@@ -94,7 +96,8 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 9 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-09T01:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -122,7 +125,8 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_tuesday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 10 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-10T01:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -150,7 +154,8 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_wednesday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 11 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-11T01:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -170,6 +175,7 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_wednesday():
     instance_id_list = list(map(lambda x: x.id, instances))
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
+
 
 @mock_ec2
 def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_thursday():
@@ -177,7 +183,8 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_thursday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 12 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+   # os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-12T01:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -197,7 +204,6 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_thursday():
     instance_id_list = list(map(lambda x: x.id, instances))
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
-
 
 
 @mock_ec2
@@ -206,7 +212,8 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_on_friday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 13 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-13T01:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -234,7 +241,8 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_on_monday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 16 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-16T01:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -262,7 +270,8 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_passed():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 16 2020 1:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-16T01:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -286,11 +295,11 @@ def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_date_passed():
 
 @mock_ec2
 def should_stop_ec2_instances_for_08_24_Mon_Fri_tag():
+    os.environ['TZ'] = 'UTC'
     os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
     local_tz = pytz.timezone('Australia/Sydney')
-    datetime_object = datetime.strptime('Nov 9 2020 12:00AM', '%b %d %Y %I:%M%p')
-    datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    # datetime_object = datetime.strptime('Nov 9 2020 12:00AM', '%b %d %Y %I:%M%p')
+    os.environ['CURR_TIME'] = '2020-11-09T00:00:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -316,7 +325,8 @@ def should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_still_before_8am():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 9 2020 7:59AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-09T07:59:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -335,13 +345,15 @@ def should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_still_before_8am():
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
 
+
 @mock_ec2
 def should_start_ec2_instances_for_24x5_Mon_Fri_tag_if_after_8am():
     os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 9 2020 8:01AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-09T08:01:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -369,7 +381,8 @@ def should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_saturday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 14 2020 12:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-14T12:00:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -389,14 +402,14 @@ def should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_saturday():
     assert instance_id in filtered_instance_ids
 
 
-
 @mock_ec2
 def should_stop_ec2_instances_for_08_24_Mon_Fri_tag_if_sunday():
     os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 15 2020 12:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-15T12:00:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -422,7 +435,8 @@ def should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_saturday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 14 2020 12:01AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-14T12:01:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -444,14 +458,14 @@ def should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_saturday():
     assert instance_id in filtered_instance_ids
 
 
-
 @mock_ec2
 def should_not_start_ec2_instances_for_24x5_Mon_Fri_tag_if_sunday():
     os.environ['AVAILABILITY_TAG_VALUES'] = '08-24_Mon-Fri'
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 15 2020 12:01AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-15T12:01:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -479,7 +493,8 @@ def should_stop_ec2_instances_for_08_18_Mon_Sun_tag_if_after_6pm():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 9 2020 6:01PM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-09T18:01:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -505,7 +520,8 @@ def should_start_ec2_instances_for_08_18_Mon_Sun_tag_if_after_8am():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 9 2020 8:01AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-09T08:01:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -526,13 +542,15 @@ def should_start_ec2_instances_for_08_18_Mon_Sun_tag_if_after_8am():
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
 
+
 @mock_ec2
 def should_stop_ec2_instances_for_08_18_Mon_Fri_tag_if_after_6pm():
     os.environ['AVAILABILITY_TAG_VALUES'] = '08-18_Mon-Fri'
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 15 2020 6:00PM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-15T18:00:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -558,7 +576,8 @@ def should_stop_ec2_instances_for_08_18_Mon_Fri_tag_if_after_12am():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 15 2020 12:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-15T00:00:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -578,14 +597,14 @@ def should_stop_ec2_instances_for_08_18_Mon_Fri_tag_if_after_12am():
     assert instance_id in filtered_instance_ids
 
 
-
 @mock_ec2
 def should_start_ec2_instances_for_08_18_Mon_Fri_tag_if_after_8am():
     os.environ['AVAILABILITY_TAG_VALUES'] = '08-18_Mon-Fri'
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 9 2020 8:01AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-09T08:01:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -613,7 +632,8 @@ def should_start_ec2_instances_for_08_18_Mon_Fri_tag_if_after_9am():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 9 2020 9:00AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-09T09:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -641,7 +661,8 @@ def should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_saturday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 14 2020 12:01AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-14T00:01:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -661,7 +682,6 @@ def should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_saturday():
     instance_id_list = list(map(lambda x: x.id, instances))
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
-
 
 
 @mock_ec2
@@ -670,7 +690,8 @@ def should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_sunday():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 15 2020 12:01AM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-15T12:01:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -690,6 +711,7 @@ def should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_sunday():
     instance_id_list = list(map(lambda x: x.id, instances))
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
+
 
 @mock_ec2
 def should_stop_ec2_instances_for_18_Shutdown_tag_if_after_6pm():
@@ -697,7 +719,8 @@ def should_stop_ec2_instances_for_18_Shutdown_tag_if_after_6pm():
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 15 2020 6:00PM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-15T18:00:00+11:00'
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
     reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
@@ -716,13 +739,15 @@ def should_stop_ec2_instances_for_18_Shutdown_tag_if_after_6pm():
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
 
+
 @mock_ec2
 def should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped():
     os.environ['AVAILABILITY_TAG_VALUES'] = '18_Shutdown'
     local_tz = pytz.timezone('Australia/Sydney')
     datetime_object = datetime.strptime('Nov 15 2020 6:00PM', '%b %d %Y %I:%M%p')
     datetime_object = datetime_object.replace(tzinfo=local_tz)
-    os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    #os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+    os.environ['CURR_TIME'] = '2020-11-15T18:00:00+11:00'
 
     region = 'ap-southeast-2'
     client = boto3.client('ec2', region_name=region)
@@ -742,6 +767,27 @@ def should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped():
     instance_id_list = list(map(lambda x: x.id, instances))
     filtered_instance_ids = list(filter(lambda x: x == instance_id, instance_id_list))
     assert instance_id in filtered_instance_ids
+
+
+@mock_ec2
+def should_test_with_all_tags():
+    os.environ['AVAILABILITY_TAG_VALUES'] = '24x5_Mon-Fri,08-24_Mon-Fri,08-18_Mon-Sun,08-18_Mon-Fri,18_Shutdown'
+    # local_tz = pytz.timezone('Australia/Sydney')
+    # datetime_object = datetime.strptime('Nov 15 2020 6:00PM', '%b %d %Y %I:%M%p')
+    # datetime_object = datetime_object.replace(tzinfo=local_tz)
+    # os.environ['CURR_TIME'] = datetime_object.strftime("%m/%d/%Y, %H:%M:%S")
+
+    # region = 'ap-southeast-2'
+    # client = boto3.client('ec2', region_name=region)
+    # reservation = client.run_instances(ImageId='ami-1234abcd', MinCount=1, MaxCount=1)
+    # instance_id = reservation['Instances'][0]['InstanceId']
+    # client.stop_instances(InstanceIds=[instance_id])
+    #
+    # tags = list(map(lambda x: create_tag_obj(x), os.environ['AVAILABILITY_TAG_VALUES'].split(",")))
+    #
+    # client.create_tags(Resources=[instance_id], Tags=tags)
+
+    handler.ec2_stop_start(None, None)
 
 
 #
@@ -866,4 +912,4 @@ if __name__ == '__main__':
     should_not_start_ec2_instances_for_8_18_Mon_Fri_tag_if_sunday()
     should_stop_ec2_instances_for_18_Shutdown_tag_if_after_6pm()
     should_not_start_ec2_instances_for_18_Shutdown_tag_if_already_stopped()
-
+    #should_test_with_all_tags()
