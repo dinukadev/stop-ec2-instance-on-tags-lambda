@@ -57,5 +57,5 @@ custom:
       # runs every 40 minutes
       prod: rate(15 minutes)
       # runs every 1 minute(for dev purposes)
-      dev: rate(1 minute)
+      dev: rate(15 minute)
       test: rate(15 minutes)
