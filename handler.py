@@ -163,23 +163,19 @@ def get_valid_tags(pattern):
     local_tz = pytz.timezone('Australia/Sydney')
     local_time = now.astimezone(local_tz)
     local_time = local_time.replace(hour=0, second=0, microsecond=0, minute=0)
-    day_int = now.weekday()
+    day_int = local_time.weekday()
     stop_from_date = None
     stop_to_date = None
     start_from_date = None
     start_end_date = None
     if pattern == "24x5_Mon-Fri":
-        if day_int > 0:
-            start_from_date = local_time + timedelta(days=day_int - 4)
+        if 0 <= day_int <= 4:
+            start_from_date = local_time
             start_end_date = None
         else:
-            start_from_date = local_time + timedelta(days=day_int)
+            start_from_date = None
             start_end_date = None
-        if day_int <= 5:
-            stop_from_date = local_time + timedelta(days=5 - day_int)
-            stop_to_date = local_time + timedelta(days=(5 - day_int) + 2)
-        else:
-            stop_from_date = local_time + timedelta(days=- 1)
+            stop_from_date = local_time
             stop_to_date = local_time + timedelta(days=1)
     if pattern == "08-24_Mon-Fri":
         if 0 <= day_int <= 4:
