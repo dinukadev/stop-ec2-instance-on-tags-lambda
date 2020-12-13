@@ -18,6 +18,7 @@ serverless --version
 - [Install the AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
 - Create an AWS user who has full admin access with programmatic access and obtain the access key ID and the secret access key 
 - Run the `aws configure` and follow the instructions to setup access via the AWS CLI
+- Make sure to setup AWS SES on the region you are deploying this lambda
 
 # Configuration and Profiles
 This lambda is broken down into three main profiles;
@@ -41,7 +42,7 @@ environment:
     AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri,08-24_Mon-Fri,08-18_Mon-Sun,08-18_Mon-Fri,18_Shutdown,24x7_Mon-Sun,Maintenance
 ```
 
-The email configuration is broken down based on profiles so you can switch it as needed with differnt emails if need be;
+The email configuration is broken down based on profiles so you can switch it as needed with different emails if need be;
 
 ```
     EMAIL_ALERTS_FLAG: true
@@ -54,14 +55,14 @@ The email configuration is broken down based on profiles so you can switch it as
   env:
     email:
       prod:
-        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
-        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_FROM: prod@lambda.com
+        EMAIL_TO: prod@lambda.com
       test:
-        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
-        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_FROM: test@lambda.com
+        EMAIL_TO: test@lambda.com
       dev:
-        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
-        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_FROM: dev@lambda.com
+        EMAIL_TO: dev@lambda.com
 ```
 
 You can turn off all email configuration by setting the value to `false` on the following property;
@@ -87,7 +88,7 @@ On the test and development environments, you would want to clean up the lambda 
 As the serverless framework deploys the lambda using CloudFormation, cleaning up all your resources is quite easy. All you have to do is to execute the following command.
 
 ```
-sls remove
+sls remove --stage test
 ```
 
 # Running tests

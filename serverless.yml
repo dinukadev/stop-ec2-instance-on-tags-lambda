@@ -1,6 +1,6 @@
 
 
-service: ec2-start-stop-lambda # NOTE: update this with your service name
+service: ec2-start-stop-lambda
 
 provider:
   name: aws
@@ -67,20 +67,21 @@ custom:
   env:
     email:
       prod:
-        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
-        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_FROM: prod@lambda.com
+        EMAIL_TO: prod@lambda.com
         EMAIL_SUBJECT: AWS Availability Scheduler Report - Production Environment
         EMAIL_ALERTS_FLAG: false
       test:
-        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
-        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_FROM: test@lambda.com
+        EMAIL_TO: test@lambda.com
         EMAIL_SUBJECT: AWS Availability Scheduler Report - Test Environment
         EMAIL_ALERTS_FLAG: false
       dev:
-        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
-        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_FROM: dev@lambda.com
+        EMAIL_TO: dev@lambda.com
         EMAIL_SUBJECT: AWS Availability Scheduler Report - Development Environment
         EMAIL_ALERTS_FLAG: true
+    # cron for each environment the lambda is deployed to.
     cron:
       prod: rate(15 minutes)
       dev: rate(15 minutes)

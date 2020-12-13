@@ -57,8 +57,9 @@ def handle_email_alerts_for_non_compliant_instances():
     email_content_for_invalid_instances = build_email_body_content_for_invalid_tags_or_maintenance_instances_and_stop_invalid_value_intances(
         reservations)
 
+    region = os.environ['REGION']
     if email_alert_flag and len(email_content_for_invalid_instances) > 0:
-        ses_client = boto3.client('ses', region_name='us-west-2')
+        ses_client = boto3.client('ses', region_name=region)
         try:
             email_body = " ".join(email_content_for_invalid_instances)
             print('email body : {}'.format(email_body))
@@ -99,7 +100,8 @@ def build_email_body_content_for_invalid_tags_or_maintenance_instances_and_stop_
                                 'ERROR: Instance {} has a non-compliant value! \n'.format(str(instance['InstanceId'])))
                             if instance_state == "running":
                                 ec2_client.stop_instances(InstanceIds=[str(instance['InstanceId'])])
-                                print('Stopped instance id : {} as it has an invalid value : {}'.format(str(instance['InstanceId']), availability_tag))
+                                print('Stopped instance id : {} as it has an invalid value : {}'.format(
+                                    str(instance['InstanceId']), availability_tag))
     return email_body_text
 
 
