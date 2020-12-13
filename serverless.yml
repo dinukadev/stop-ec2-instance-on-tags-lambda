@@ -23,12 +23,22 @@ provider:
         - "ec2:DescribeRegions"
         - "ec2:DescribeInstances"
       Resource: { "Fn::Join" : ["", ["*" ] ]  }
+    - Effect: "Allow"
+      Action:
+        - "ses:SendEmail"
+      Resource: { "Fn::Join": ["", ["*" ] ]  }
 
 
-# you can define a comma separate list of tags here and the lambda will match any EC2 instance that has any one of these tags
-# e.g : Auto=On,Stop=True
   environment:
-    TAGS: Auto=On
+    AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri,08-24_Mon-Fri,08-18_Mon-Sun,08-18_Mon-Fri,18_Shutdown,24x7_Mon-Sun,Maintenance
+    #true if alerts are to be sent, false otherwise
+    EMAIL_ALERTS_FLAG:  ${self:custom.env.email.${self:custom.stage}.EMAIL_ALERTS_FLAG}
+    REGION: ${self:provider.region}
+    EMAIL_FROM: ${self:custom.env.email.${self:custom.stage}.EMAIL_FROM}
+    EMAIL_TO: ${self:custom.env.email.${self:custom.stage}.EMAIL_TO}
+    EMAIL_SUBJECT: ${self:custom.env.email.${self:custom.stage}.EMAIL_SUBJECT}
+    EMAIL_CHARSET: UTF-8
+    TAG_NAME: Availability
 
 # you can add packaging information here
 package:
@@ -41,8 +51,8 @@ package:
 
 functions:
   ec2stop:
-    handler: handler.ec2_stop
-    timeout: 300
+    handler: handler.ec2_stop_start
+    timeout: 900
     events:
       - schedule: ${self:custom.env.cron.${self:custom.stage}}
 
@@ -55,10 +65,23 @@ custom:
     dockerizePip: non-linux
   stage: ${opt:stage, self:provider.stage}
   env:
+    email:
+      prod:
+        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
+        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_SUBJECT: AWS Availability Scheduler Report - Production Environment
+        EMAIL_ALERTS_FLAG: false
+      test:
+        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
+        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_SUBJECT: AWS Availability Scheduler Report - Test Environment
+        EMAIL_ALERTS_FLAG: false
+      dev:
+        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
+        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+        EMAIL_SUBJECT: AWS Availability Scheduler Report - Development Environment
+        EMAIL_ALERTS_FLAG: true
     cron:
-      # runs every 40 minutes
-      prod: cron(0/40 * * * ? *)
-      # runs every 1 minute(for dev purposes)
-      dev: cron(0/1 * ? * * *)
-      # runs every 1 minute(for dev purposes)
-      test: cron(0/1 * ? * * *)
+      prod: rate(15 minutes)
+      dev: rate(15 minutes)
+      test: rate(15 minutes)

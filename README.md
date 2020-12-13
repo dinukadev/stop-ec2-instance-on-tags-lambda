@@ -30,18 +30,44 @@ You can see this within the serverless.yml;
 custom:
   env:
     cron:
-      # runs every 40 minutes
-      prod: cron(0/40 * * * ? *)
-      # runs every 1 minute(for dev purposes)
-      dev: cron(0/1 * ? * * *)
-      # runs every 1 minute(for dev purposes)
-      test: cron(0/1 * ? * * *)
+       prod: rate(15 minutes)
+       dev: rate(15 minutes)
+       test: rate(15 minutes)
 ```
 
-As this lambda is being invoked on a scheduled basis, we have configured the cron jobs for each environment. For example, on development and test, to make things move faster,
-the cron job executes every minute. 
+The valid tag values are also configured as properties within the same yaml file as follows;
+```
+environment:
+    AVAILABILITY_TAG_VALUES: 24x5_Mon-Fri,08-24_Mon-Fri,08-18_Mon-Sun,08-18_Mon-Fri,18_Shutdown,24x7_Mon-Sun,Maintenance
+```
 
-On the production profile however, we can set it to a daily run if need be to save on lambda execution costs. Right now it is set to run every 40 minutes.
+The email configuration is broken down based on profiles so you can switch it as needed with differnt emails if need be;
+
+```
+    EMAIL_ALERTS_FLAG: true
+    REGION: ${self:provider.region}
+    EMAIL_FROM: ${self:custom.env.email.${self:custom.stage}.EMAIL_FROM}
+    EMAIL_TO: ${self:custom.env.email.${self:custom.stage}.EMAIL_TO}
+    EMAIL_SUBJECT: AWS Availability Scheduler Report - Development Environment
+    EMAIL_CHARSET: UTF-8
+
+  env:
+    email:
+      prod:
+        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
+        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+      test:
+        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
+        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+      dev:
+        EMAIL_FROM: dl-aws-ops-master@metricon.com.au
+        EMAIL_TO: dl-aws-ops-master@metricon.com.au
+```
+
+You can turn off all email configuration by setting the value to `false` on the following property;
+```
+EMAIL_ALERTS_FLAG: false
+```
 
 # Deployment
 Once the pre-requisites mentioned above are completed, you can deploy the lambda by invoking the following command;
@@ -72,11 +98,11 @@ A Dockerfile is provided so that you do not need to install all the required lib
 Make sure you have docker installed and then run the following command to build the docker image;
 
 ```
-docker build --force-rm=true -t ec2-stop-lambda:latest .
+docker build --force-rm=true -t ec2-stop-start-lambda:latest .
 ```
 
 And then to run the tests, run the following command;
 ```
-docker run -it ec2-stop-lambda:latest
+docker run -it ec2-stop-start-lambda:latest
 ```
 

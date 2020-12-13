@@ -1,7 +1,8 @@
 FROM python:3.6-slim
 
 ENV AWS_DEFAULT_REGION=ap-southeast-2
-
+ENV TZ=UTC
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN pip install --upgrade pip
 
