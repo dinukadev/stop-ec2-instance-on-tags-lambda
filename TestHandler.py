@@ -13,6 +13,7 @@ os.environ['EMAIL_SUBJECT'] = 'test'
 os.environ['EMAIL_CHARSET'] = 'UTF-8'
 os.environ['EMAIL_ALERTS_FLAG'] = 'false'
 os.environ['TAG_NAME'] = 'Availability'
+os.environ['TIMEZONE'] = 'Australia/Sydney'
 
 @mock_ec2
 def should_stop_ec2_instances_for_24x5_Mon_Fri_tag():

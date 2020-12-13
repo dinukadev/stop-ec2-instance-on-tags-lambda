@@ -107,7 +107,8 @@ def build_email_body_content_for_invalid_tags_or_maintenance_instances_and_stop_
 
 def get_eligible_stop_filters(tags):
     now = parse(os.environ['CURR_TIME']) if "CURR_TIME" in os.environ is not None else datetime.now()
-    local_tz = pytz.timezone('Australia/Sydney')
+    timezone = os.environ['TIMEZONE']
+    local_tz = pytz.timezone(timezone)
     local_time = now.astimezone(local_tz)
     print('local time : {}'.format(local_time))
     tags_arr = []
@@ -134,7 +135,8 @@ def get_eligible_stop_filters(tags):
 
 
 def get_eligible_start_filters(tags):
-    local_tz = pytz.timezone('Australia/Sydney')
+    timezone = os.environ['TIMEZONE']
+    local_tz = pytz.timezone(timezone)
     now = parse(os.environ['CURR_TIME']) if "CURR_TIME" in os.environ is not None else datetime.now()
     local_time = now.astimezone(local_tz)
     tags_arr = []
@@ -162,7 +164,8 @@ def get_eligible_start_filters(tags):
 
 def get_valid_tags(pattern):
     now = parse(os.environ['CURR_TIME']) if "CURR_TIME" in os.environ is not None else datetime.now()
-    local_tz = pytz.timezone('Australia/Sydney')
+    timezone = os.environ['TIMEZONE']
+    local_tz = pytz.timezone(timezone)
     local_time = now.astimezone(local_tz)
     local_time = local_time.replace(hour=0, second=0, microsecond=0, minute=0)
     day_int = local_time.weekday()

@@ -39,6 +39,7 @@ provider:
     EMAIL_SUBJECT: ${self:custom.env.email.${self:custom.stage}.EMAIL_SUBJECT}
     EMAIL_CHARSET: UTF-8
     TAG_NAME: Availability
+    TIMEZONE: Australia/Sydney
 
 # you can add packaging information here
 package:
